@@ -3,6 +3,7 @@
 pragma solidity ^0.8.18;
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
+import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
 
 /**
  * @title A sampleRaffle Contract
@@ -10,8 +11,9 @@ import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interface
  * @notice Create a sample raffle
  * @dev Implements Chainlink VRFv2
  */
-contract Raffle {
+contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughtEthSent();
+    error Raffle__TransferFailed();
 
     uint16 private constant REQ_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
@@ -26,6 +28,7 @@ contract Raffle {
 
     address payable[] private s_players;
     uint256 private s_lastTimeStamp;
+    address private s_winner;
 
     /** Events */
     event EnteredRaffle(address indexed player);
@@ -37,7 +40,7 @@ contract Raffle {
         bytes32 gasLane,
         uint64 subId,
         uint32 callbackGasLimit
-    ) {
+    ) VRFConsumerBaseV2(vrfCoordinator) {
         i_enterenceFee = enterenceFee;
         i_interval = interval;
         i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinator);
@@ -66,6 +69,7 @@ contract Raffle {
         }
 
         // Will revert if subscription is not set and funded.
+        // Make a request to chainlink note ->
         uint256 requestId = i_vrfCoordinator.requestRandomWords(
             i_gasLane, // gas lane
             i_subId,
@@ -73,6 +77,28 @@ contract Raffle {
             i_callbackGasLimit,
             NUM_WORDS
         );
+    }
+
+    // -> Callback to catch response from chainlink note
+    function fulfillRandomWords(
+        uint256 _requestId,
+        uint256[] memory _randomWords
+    ) internal override {
+        // s_players = 10
+        uint256 indexOfWinner = _randomWords[0] % s_players.length;
+        address payable winner = s_players[indexOfWinner];
+        s_winner = winner;
+
+        (bool success, ) = winner.call{value: address(this).balance}("");
+
+        if (!success) {
+            revert Raffle__TransferFailed();
+        }
+
+        // require(s_requests[_requestId].exists, "request not found");
+        // s_requests[_requestId].fulfilled = true;
+        // s_requests[_requestId].randomWords = _randomWords;
+        // emit RequestFulfilled(_requestId, _randomWords);
     }
 
     /** Getter Function */
