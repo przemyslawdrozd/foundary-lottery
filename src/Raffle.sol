@@ -14,6 +14,13 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
 contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughtEthSent();
     error Raffle__TransferFailed();
+    error Raffle_RaffleNotOpen();
+
+    /** Type declaration */
+    enum RaffleState {
+        OPEN, // 0
+        CALCULATING // 1
+    }
 
     uint16 private constant REQ_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
@@ -29,6 +36,7 @@ contract Raffle is VRFConsumerBaseV2 {
     address payable[] private s_players;
     uint256 private s_lastTimeStamp;
     address private s_winner;
+    RaffleState s_raffleState = RaffleState.OPEN;
 
     /** Events */
     event EnteredRaffle(address indexed player);
@@ -55,6 +63,11 @@ contract Raffle is VRFConsumerBaseV2 {
         if (msg.value < i_enterenceFee) {
             revert Raffle__NotEnoughtEthSent();
         }
+
+        if (s_raffleState != RaffleState.OPEN) {
+            revert Raffle_RaffleNotOpen();
+        }
+
         s_players.push(payable(msg.sender));
         emit EnteredRaffle(msg.sender);
     }
@@ -67,6 +80,8 @@ contract Raffle is VRFConsumerBaseV2 {
         if ((block.timestamp - s_lastTimeStamp) < i_interval) {
             revert();
         }
+
+        s_raffleState = RaffleState.CALCULATING;
 
         // Will revert if subscription is not set and funded.
         // Make a request to chainlink note ->
@@ -84,21 +99,16 @@ contract Raffle is VRFConsumerBaseV2 {
         uint256 _requestId,
         uint256[] memory _randomWords
     ) internal override {
-        // s_players = 10
         uint256 indexOfWinner = _randomWords[0] % s_players.length;
         address payable winner = s_players[indexOfWinner];
         s_winner = winner;
+        s_raffleState = RaffleState.OPEN;
 
         (bool success, ) = winner.call{value: address(this).balance}("");
 
         if (!success) {
             revert Raffle__TransferFailed();
         }
-
-        // require(s_requests[_requestId].exists, "request not found");
-        // s_requests[_requestId].fulfilled = true;
-        // s_requests[_requestId].randomWords = _randomWords;
-        // emit RequestFulfilled(_requestId, _randomWords);
     }
 
     /** Getter Function */
