@@ -78,11 +78,11 @@ contract Raffle is VRFConsumerBaseV2 {
         emit EnteredRaffle(msg.sender);
     }
 
-    // When is thr winner supposed to be picked ?
+    // When is the winner supposed to be picked ?
     /**
      * @dev This is the function that the Chainlink Automation nodes call
-     * to see if it's time to perdorm an upkeep.
-     * The following should ne true for this to retunr true
+     * to see if it's time to perform an upkeep.
+     * The following should be true for this to returr true
      * 1. The time interval has passed between raffle runs
      * 2. The raffle is in the OPEN state
      * 3. The contract has ETH (aka, players)
@@ -120,7 +120,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
         // Will revert if subscription is not set and funded.
         // Make a request to chainlink note ->
-        uint256 requestId = i_vrfCoordinator.requestRandomWords(
+        i_vrfCoordinator.requestRandomWords(
             i_gasLane, // gas lane
             i_subId,
             REQ_CONFIRMATIONS,
@@ -131,7 +131,7 @@ contract Raffle is VRFConsumerBaseV2 {
 
     // -> Callback to catch response from chainlink note
     function fulfillRandomWords(
-        uint256 _requestId,
+        uint256 /* requestId */,
         uint256[] memory _randomWords
     ) internal override {
         uint256 indexOfWinner = _randomWords[0] % s_players.length;
