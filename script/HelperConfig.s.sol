@@ -32,7 +32,7 @@ contract HelperConfig is Script {
         }
 
         uint96 baseFee = 0.25 ether; // 0.25 LINK
-        uint96 gasPriceLink = 1e9; // 1gwei LINK
+        uint96 gasPriceLink = 1e9; // 1 gwei LINK
 
         vm.startBroadcast();
         VRFCoordinatorV2Mock vrfCoordinatorV2Mock = new VRFCoordinatorV2Mock(
