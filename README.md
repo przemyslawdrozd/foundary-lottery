@@ -7,4 +7,6 @@ After X period of time, the lottery will automatically draw a winner
 
 Using Chanlink VRF & Chainlink Automation
 
-More soon..
+## Tests!
+
+1. Write deploy script
