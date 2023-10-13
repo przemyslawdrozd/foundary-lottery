@@ -12,6 +12,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
  * @dev Implements Chainlink VRFv2
  */
 contract Raffle is VRFConsumerBaseV2 {
+    /** Type Errors */
     error Raffle__NotEnoughtEthSent();
     error Raffle__TransferFailed();
     error Raffle_RaffleNotOpen();
@@ -30,18 +31,18 @@ contract Raffle is VRFConsumerBaseV2 {
     uint16 private constant REQ_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
 
-    // @dev Duration of the lottery in seconds
-    uint256 private immutable i_interval;
-    uint256 private immutable i_enterenceFee;
+    /** Type VRF params */
     VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
-    bytes32 private immutable i_gasLane;
-    uint64 private immutable i_subId;
-    uint32 private immutable i_callbackGasLimit;
+    uint256 private immutable i_interval; // @dev Duration of the lottery in seconds
+    uint256 private immutable i_enterenceFee; // Min amount of ETH to call contract
+    bytes32 private immutable i_gasLane; // Hash to oracle job to crate the VRF proof
+    uint64 private immutable i_subId; // ID of the VRF sub - script will add this
+    uint32 private immutable i_callbackGasLimit; // Max possible spend gas for receive
 
-    address payable[] private s_players;
-    uint256 private s_lastTimeStamp;
-    address private s_winner;
-    RaffleState s_raffleState = RaffleState.OPEN;
+    address payable[] private s_players; // List of joined players
+    uint256 private s_lastTimeStamp; // When contract was created on blockchain
+    address private s_winner; // Random winner of the contract in future
+    RaffleState s_raffleState = RaffleState.OPEN; // Init state of contract as open
 
     /** Events */
     event EnteredRaffle(address indexed player);
@@ -82,7 +83,7 @@ contract Raffle is VRFConsumerBaseV2 {
     /**
      * @dev This is the function that the Chainlink Automation nodes call
      * to see if it's time to perform an upkeep.
-     * The following should be true for this to returr true
+     * The following should be true for this to return true
      * 1. The time interval has passed between raffle runs
      * 2. The raffle is in the OPEN state
      * 3. The contract has ETH (aka, players)
