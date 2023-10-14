@@ -10,11 +10,30 @@ contract RaffleTest is Test {
     HelperConfig helperConfig;
     Raffle raffle;
 
+    uint256 enterenceFee;
+    uint256 interval;
+    address vrfCoordinator;
+    bytes32 gasLane;
+    uint64 subId;
+    uint32 callbackGasLimit;
+
     address public PLAYER = makeAddr("player");
     uint256 public constant STARTING_USER_BALANCE = 10 ether;
 
     function setUp() external {
         DeployRaffle deployer = new DeployRaffle();
         (raffle, helperConfig) = deployer.run();
+        (
+            enterenceFee,
+            interval,
+            vrfCoordinator,
+            gasLane,
+            subId,
+            callbackGasLimit
+        ) = helperConfig.activeNetworkConfig();
+    }
+
+    function testRaffleInitIsOpenState() public view {
+        assert(raffle.getRaffleState() == Raffle.RaffleState.OPEN);
     }
 }
