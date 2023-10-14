@@ -7,6 +7,9 @@ import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 
 contract RaffleTest is Test {
+    /** Events */
+    event EnteredRaffle(address indexed player);
+
     HelperConfig helperConfig;
     Raffle raffle;
 
@@ -60,5 +63,15 @@ contract RaffleTest is Test {
 
         // Assert
         assert(playerRecorded == PLAYER);
+    }
+
+    function testEmitsEventOnEnterence() public {
+        // Arrange
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(raffle));
+
+        // Act / Assert
+        emit EnteredRaffle((PLAYER));
+        raffle.enterRaffle{value: enterenceFee}();
     }
 }
