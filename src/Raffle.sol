@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.19;
 
 import {VRFCoordinatorV2Interface} from "@chainlink/contracts/src/v0.8/interfaces/VRFCoordinatorV2Interface.sol";
 import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2.sol";
@@ -62,7 +62,7 @@ contract Raffle is VRFConsumerBaseV2 {
         i_gasLane = gasLane;
         i_subId = subId;
         i_callbackGasLimit = callbackGasLimit;
-        s_lastTimeStamp - block.timestamp;
+        s_lastTimeStamp = block.timestamp;
     }
 
     function enterRaffle() external payable {
@@ -94,6 +94,7 @@ contract Raffle is VRFConsumerBaseV2 {
         bytes memory /* checkData */
     ) public view returns (bool upkeepNeed, bytes memory /* performData */) {
         bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) < i_interval);
+
         bool isOpen = RaffleState.OPEN == s_raffleState;
         bool hasBalance = address(this).balance > 0;
         bool hasPlayer = s_players.length > 0;
@@ -155,5 +156,9 @@ contract Raffle is VRFConsumerBaseV2 {
     /** Getter Function */
     function getEnteranceFee() external view returns (uint256) {
         return i_enterenceFee;
+    }
+
+    function getRaffleState() external view returns (RaffleState) {
+        return s_raffleState;
     }
 }

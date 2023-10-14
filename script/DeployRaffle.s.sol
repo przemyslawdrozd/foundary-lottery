@@ -7,7 +7,6 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 
 contract DeployRaffle is Script {
     function run() external returns (Raffle, HelperConfig) {
-        vm.startBroadcast();
         HelperConfig helperConfig = new HelperConfig();
         (
             uint256 enterenceFee,
@@ -18,6 +17,7 @@ contract DeployRaffle is Script {
             uint32 callbackGasLimit
         ) = helperConfig.activeNetworkConfig();
 
+        vm.startBroadcast();
         Raffle raffle = new Raffle(
             enterenceFee,
             interval,
