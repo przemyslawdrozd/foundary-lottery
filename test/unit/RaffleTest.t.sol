@@ -137,6 +137,7 @@ contract RaffleTest is Test {
     }
 
     function testCheckupKeepReturnsTrueWhenParametersAreGood() public {
+        // Arrange
         vm.prank(PLAYER);
         raffle.enterRaffle{value: enterenceFee}();
         vm.warp(block.timestamp + interval + 1);
@@ -147,5 +148,35 @@ contract RaffleTest is Test {
 
         // Assert
         assert(upkeepNeeded);
+    }
+
+    /** performUpKeep */
+    function testPerformUpkeepCanOnlyRunIfCheckIpKeepIsTrue() public {
+        // Arange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: enterenceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Act / Assert
+        raffle.performUpkeep("");
+    }
+
+    function testPerformUpkeepRevertsIfCheckUpKeepIsFalse() public {
+        // Arrange
+        uint256 currentBalance = 0;
+        uint256 numPlayers = 0;
+        uint256 raffleState = 0;
+
+        // Act / Assert
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                Raffle.Raffle__UpkeepNotNeeded.selector,
+                currentBalance,
+                numPlayers,
+                raffleState
+            )
+        );
+        raffle.performUpkeep("");
     }
 }
