@@ -120,4 +120,32 @@ contract RaffleTest is Test {
         // Assert
         assert(upkeepNeeded == false);
     }
+
+    function testCheckUpKeepReturnsFalseIfEnoughTimeHasntPassed() public {
+        // Arrange
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: enterenceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        raffle.performUpkeep("");
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(upkeepNeeded == false);
+    }
+
+    function testCheckupKeepReturnsTrueWhenParametersAreGood() public {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: enterenceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        // Act
+        (bool upkeepNeeded, ) = raffle.checkUpkeep("");
+
+        // Assert
+        assert(upkeepNeeded);
+    }
 }
