@@ -182,4 +182,80 @@ contract RaffleTest is Test {
         );
         raffle.performUpkeep("");
     }
+
+    // What if I need to test using the output of an event?
+    function testPerformUpkeepUpdatesRaffleStateAndEmitsRequestId()
+        public
+        raffleEnteredAndTimePassed
+    {
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep(""); // emit requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[0];
+
+        Raffle.RaffleState rState = raffle.getRaffleState();
+
+        assert(uint256(requestId) > 0);
+        assert(uint256(rState) == 1);
+    }
+
+    /** FulfillRandomWords */
+    function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpKeep(
+        uint256 randomRequestId
+    ) public raffleEnteredAndTimePassed {
+        console.log("randomRequestId", randomRequestId);
+        // Arrange
+        vm.expectRevert("nonexistent request");
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            randomRequestId,
+            address(raffle)
+        );
+    }
+
+    function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
+        public
+        raffleEnteredAndTimePassed
+    {
+        // Arrange
+        uint256 additionalEntrants = 5;
+        uint256 startingIndex = 1;
+
+        for (uint256 i = startingIndex; i < additionalEntrants; i++) {
+            address player = address(uint160(i)); // address(1)
+            console.log("Player added", i);
+            hoax(player, STARTING_USER_BALANCE);
+            raffle.enterRaffle{value: enterenceFee}();
+        }
+
+        uint256 prize = enterenceFee * (additionalEntrants + 1);
+        console.log("prize", prize);
+
+        // Act
+        vm.recordLogs();
+        raffle.performUpkeep(""); // emit requestId
+        Vm.Log[] memory entries = vm.getRecordedLogs();
+        bytes32 requestId = entries[1].topics[0];
+
+        for(uint256 i = 0; i < entries.length; i++){
+            for(uint256 k = 0; k < entries[i].topics.length; k++){
+                bytes32 captureEvent = entries[i].topics[k];
+                console.log("capture event",i,k, uint256(captureEvent));
+            }
+        }
+
+        console.log("requestId", uint256(requestId));
+
+        VRFCoordinatorV2Mock(vrfCoordinator).fulfillRandomWords(
+            uint256(requestId),
+            address(raffle)
+        );
+
+        // Assert
+        assert(raffle.getPlayer(1).balance == raffle.getPlayer(2).balance);
+        assert(uint256(raffle.getRaffleState()) == 0); // Should be open
+        assert(raffle.getWinner() != address(0));
+        assert(raffle.getLengthOfPlayers() == 0);
+        assert(raffle.getWinner().balance == STARTING_USER_BALANCE + prize);
+    }
 }
