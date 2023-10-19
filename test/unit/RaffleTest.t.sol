@@ -5,6 +5,8 @@ import {Raffle} from "../../src/Raffle.sol";
 import {Test, console} from "forge-std/Test.sol";
 import {DeployRaffle} from "../../script/DeployRaffle.s.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {VRFCoordinatorV2Mock} from "@chainlink/contracts/src/v0.8/mocks/VRFCoordinatorV2Mock.sol";
 
 contract RaffleTest is Test {
     /** Events */
@@ -37,6 +39,14 @@ contract RaffleTest is Test {
             link
         ) = helperConfig.activeNetworkConfig();
         vm.deal(PLAYER, STARTING_USER_BALANCE);
+    }
+
+    modifier raffleEnteredAndTimePassed() {
+        vm.prank(PLAYER);
+        raffle.enterRaffle{value: enterenceFee}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+        _;
     }
 
     function testRaffleInitIsOpenState() public view {
@@ -121,12 +131,11 @@ contract RaffleTest is Test {
         assert(upkeepNeeded == false);
     }
 
-    function testCheckUpKeepReturnsFalseIfEnoughTimeHasntPassed() public {
+    function testCheckUpKeepReturnsFalseIfEnoughTimeHasntPassed()
+        public
+        raffleEnteredAndTimePassed
+    {
         // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: enterenceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
         raffle.performUpkeep("");
 
         // Act
@@ -136,13 +145,10 @@ contract RaffleTest is Test {
         assert(upkeepNeeded == false);
     }
 
-    function testCheckupKeepReturnsTrueWhenParametersAreGood() public {
-        // Arrange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: enterenceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-
+    function testCheckupKeepReturnsTrueWhenParametersAreGood()
+        public
+        raffleEnteredAndTimePassed
+    {
         // Act
         (bool upkeepNeeded, ) = raffle.checkUpkeep("");
 
@@ -151,13 +157,10 @@ contract RaffleTest is Test {
     }
 
     /** performUpKeep */
-    function testPerformUpkeepCanOnlyRunIfCheckIpKeepIsTrue() public {
-        // Arange
-        vm.prank(PLAYER);
-        raffle.enterRaffle{value: enterenceFee}();
-        vm.warp(block.timestamp + interval + 1);
-        vm.roll(block.number + 1);
-
+    function testPerformUpkeepCanOnlyRunIfCheckIpKeepIsTrue()
+        public
+        raffleEnteredAndTimePassed
+    {
         // Act / Assert
         raffle.performUpkeep("");
     }
