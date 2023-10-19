@@ -36,7 +36,8 @@ contract RaffleTest is Test {
             gasLane,
             subId,
             callbackGasLimit,
-            link
+            link,
+
         ) = helperConfig.activeNetworkConfig();
         vm.deal(PLAYER, STARTING_USER_BALANCE);
     }
@@ -169,7 +170,7 @@ contract RaffleTest is Test {
         // Arrange
         uint256 currentBalance = 0;
         uint256 numPlayers = 0;
-        uint256 raffleState = 0;
+        Raffle.RaffleState raffleState = raffle.getRaffleState();
 
         // Act / Assert
         vm.expectRevert(
@@ -201,9 +202,17 @@ contract RaffleTest is Test {
     }
 
     /** FulfillRandomWords */
+
+    modifier skipFork() {
+        if (block.chainid != 31337) {
+            return;
+        }
+        _;
+    }
+
     function testFulfillRandomWordsCanOnlyBeCalledAfterPerformUpKeep(
         uint256 randomRequestId
-    ) public raffleEnteredAndTimePassed {
+    ) public raffleEnteredAndTimePassed skipFork {
         console.log("randomRequestId", randomRequestId);
         // Arrange
         vm.expectRevert("nonexistent request");
@@ -216,6 +225,7 @@ contract RaffleTest is Test {
     function testFulfillRandomWordsPicksAWinnerResetsAndSendsMoney()
         public
         raffleEnteredAndTimePassed
+        skipFork
     {
         // Arrange
         uint256 additionalEntrants = 5;
@@ -237,10 +247,10 @@ contract RaffleTest is Test {
         Vm.Log[] memory entries = vm.getRecordedLogs();
         bytes32 requestId = entries[1].topics[0];
 
-        for(uint256 i = 0; i < entries.length; i++){
-            for(uint256 k = 0; k < entries[i].topics.length; k++){
+        for (uint256 i = 0; i < entries.length; i++) {
+            for (uint256 k = 0; k < entries[i].topics.length; k++) {
                 bytes32 captureEvent = entries[i].topics[k];
-                console.log("capture event",i,k, uint256(captureEvent));
+                console.log("capture event", i, k, uint256(captureEvent));
             }
         }
 
