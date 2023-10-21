@@ -66,7 +66,7 @@ contract Raffle is VRFConsumerBaseV2 {
         s_lastTimeStamp = block.timestamp;
     }
 
-    function enterRaffle() external payable {
+    function enterRaffle() public payable {
         // require(msg.value >= i_enterenceFee, "Not enough ETH sent!");
         if (msg.value < i_enterenceFee) {
             revert Raffle__NotEnoughtEthSent();
